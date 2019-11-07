@@ -10,4 +10,4 @@ t$status_id <- str_split(t$status_url, "/") %>%
 
 s <- lookup_statuses(t$status_id, token = token)
 
-write_rds(s, "processed-data.rds")
+write_rds(s, "processed-data/processed-data.rds")
