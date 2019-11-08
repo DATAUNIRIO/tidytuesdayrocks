@@ -17,21 +17,36 @@ d
 
 d <- flatten(d)
 
-d %>% 
-  filter(!is_retweet) %>% 
-  count(screen_name) %>% 
-  arrange(desc(n))
-
 urls <- d %>% 
   select(urls_expanded_url) %>%
   filter(!is.na(urls_expanded_url))
 
-library(twitteR)
-decode_short_url("http://bit.ly/23226se656")
+urls$domains <- urltools::domain(urls$urls_expanded_url) 
 
-expanded_urls <- twitteR::decode_short_url(urls)
+library(longurl)
+shorteners <- c("bit.ly", "ow.ly", "buff.ly", "goo.gl", "ln.is", "tinyurl.com", "share.es", "ht.ly", "fb.me", "wp.me", "ift.tt")
 
-github_urls <- urls %>% 
+to_expand <- urls %>% 
+  filter(domains %in% shorteners)
+
+expanded <- expand_urls(to_expand$urls_expanded_url)
+
+urls <- d %>% 
+  select(urls_expanded_url) %>%
+  filter(!is.na(urls_expanded_url)) %>% 
+  pull(urls_expanded_url)
+
+all_urls <- c(urls, expanded$expanded_url)
+urltools::domain(all_urls)
+
+url_d <- tibble(url = all_urls,
+                domain = urltools::domain(url)) %>%
+  filter(domain == "github.com" | domain == "gist.github.com") %>% 
+  select(-domain)
+
+write_csv(url_d, "all-urls.csv")
+
+github_urls <- all_urls %>% 
   filter(str_detect(urls_expanded_url, "git"))
 
 GITHUB_PAT <- '8442580d453cff1213803abdafcc72f9fc147cc3'
